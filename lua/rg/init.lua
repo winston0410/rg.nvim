@@ -25,7 +25,7 @@ local function onread(err, data)
 	end
 	if data then
 		local vals = vim.split(data, "\n")
-		for _, d in pairs(vals) do
+		for _, d in ipairs(vals) do
 			if d ~= "" then
 				table.insert(results, d)
 			end
