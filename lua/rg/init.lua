@@ -43,7 +43,6 @@ local function update_quickfix()
 end
 
 local function trigger_rg(term)
-	print("rg term", term)
 	local stdout = loop.new_pipe(false)
 	local stderr = loop.new_pipe(false)
 	handle = loop.spawn(
@@ -70,7 +69,7 @@ local function search()
 	-- Use ] mark for working in normal mode
 	local end_row, end_col = unpack(api.nvim_buf_get_mark(0, "]"))
 
-	if end_row > 1 then
+	if end_row > start_row then
 		return api.nvim_err_writeln("Multiline searching is not supported yet")
 	end
 
