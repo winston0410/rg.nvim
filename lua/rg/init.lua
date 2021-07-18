@@ -43,6 +43,7 @@ local function update_quickfix()
 end
 
 local function trigger_rg(term)
+	print("rg term", term)
 	local stdout = loop.new_pipe(false)
 	local stderr = loop.new_pipe(false)
 	handle = loop.spawn(
@@ -66,23 +67,30 @@ end
 
 local function search()
 	local start_row, start_col = unpack(api.nvim_win_get_cursor(0))
-	local end_row, end_col = unpack(api.nvim_buf_get_mark(0, ">"))
+	-- Use ] mark for working in normal mode
+	local end_row, end_col = unpack(api.nvim_buf_get_mark(0, "]"))
 
-	print(start_row, end_row, start_col, end_col, type(start_col))
+	if end_row > 1 then
+		return api.nvim_err_writeln("Multiline searching is not supported yet")
+	end
+
+	local lines = api.nvim_buf_get_lines(0, start_row - 1, end_row, false)
+
+	lines[#lines] = lines[#lines]:sub(start_col, end_col + 1)
 
 	-- if end_row > 1 then
 	-- return api.nvim_err_writeln("multi line unsupported")
 	-- end
 
-	local lines = api.nvim_buf_get_lines(0, start_row - 1, end_row, false)
+	-- local lines = api.nvim_buf_get_lines(0, start_row - 1, end_row, false)
 
-	if start_col ~= 0 then
-		lines[start_row] = lines[start_row]:sub(start_col, -1)
-	end
+	-- if start_col ~= 0 then
+	-- lines[start_row] = lines[start_row]:sub(start_col, -1)
+	-- end
 
-	if end_col ~= #lines[#lines] then
-		lines[#lines] = lines[#lines]:sub(1, end_col + 1)
-	end
+	-- if end_col ~= #lines[#lines] then
+	-- lines[#lines] = lines[#lines]:sub(1, end_col + 1)
+	-- end
 
 	trigger_rg(lines[1])
 end
