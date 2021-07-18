@@ -1,5 +1,7 @@
 # rg.nvim
 
+![demo](./static/first.gif)
+
 A plugin that integrates `rg` in nvim, while allowing you to extend it however you want.
 
 This plugin doesn't bundle you into a quickfix list plugin, or a specify UI. You can design whatever you want.
