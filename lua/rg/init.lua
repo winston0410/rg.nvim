@@ -4,19 +4,23 @@ local api = vim.api
 local opts = {
 	default_keybindings = {
 		enable = true,
-		modes = { "v" },
+		modes = { "n", "v" },
 		binding = "<Leader>s",
 	},
 	on_complete = function()
 		api.nvim_command("cwindow")
 	end,
+	program = {
+		command = "rg",
+		args = { "--vimgrep", "--smart-case" },
+	},
 }
 
 local results = {}
+
 local function onread(err, data)
 	if err then
-		-- print('ERROR: ', err)
-		-- TODO handle err
+		api.nvim_err_writeln(err)
 		return
 	end
 	if data then
@@ -28,21 +32,23 @@ local function onread(err, data)
 		end
 	end
 end
-function search(term)
-	local stdout = vim.loop.new_pipe(false)
-	local stderr = vim.loop.new_pipe(false)
-	local function setQF()
-		vim.fn.setqflist({}, "r", { title = "Search Results", lines = results })
-		opts.on_complete()
-		local count = #results
-		for i = 0, count do
-			results[i] = nil
-		end -- clear the table for the next search
-	end
-	handle = vim.loop.spawn(
-		"rg",
+
+local function update_quickfix()
+	vim.fn.setqflist({}, "r", { title = "Search Results", lines = results })
+	opts.on_complete()
+	local count = #results
+	for i = 0, count do
+		results[i] = nil
+	end -- clear the table for the next search
+end
+
+local function trigger_rg(term)
+	local stdout = loop.new_pipe(false)
+	local stderr = loop.new_pipe(false)
+	handle = loop.spawn(
+		opts.program.command,
 		{
-			args = { term, "--vimgrep", "--smart-case" },
+			args = vim.list_extend({ term }, opts.program.args),
 			stdio = { nil, stdout, stderr },
 		},
 		vim.schedule_wrap(function()
@@ -51,18 +57,41 @@ function search(term)
 			stdout:close()
 			stderr:close()
 			handle:close()
-			setQF()
+			update_quickfix()
 		end)
 	)
-	vim.loop.read_start(stdout, onread)
-	vim.loop.read_start(stderr, onread)
+	loop.read_start(stdout, onread)
+	loop.read_start(stderr, onread)
+end
+
+local function search()
+	local start_row, start_col = unpack(api.nvim_win_get_cursor(0))
+	local end_row, end_col = unpack(api.nvim_buf_get_mark(0, ">"))
+
+	print(start_row, end_row, start_col, end_col, type(start_col))
+
+	-- if end_row > 1 then
+	-- return api.nvim_err_writeln("multi line unsupported")
+	-- end
+
+	local lines = api.nvim_buf_get_lines(0, start_row - 1, end_row, false)
+
+	if start_col ~= 0 then
+		lines[start_row] = lines[start_row]:sub(start_col, -1)
+	end
+
+	if end_col ~= #lines[#lines] then
+		lines[#lines] = lines[#lines]:sub(1, end_col + 1)
+	end
+
+	trigger_rg(lines[1])
 end
 
 local function setup(user_opts)
 	opts = vim.tbl_deep_extend("force", opts, user_opts or {})
 	if opts.default_keybindings and opts.default_keybindings.enable then
 		for _, mode in ipairs(opts.default_keybindings.modes) do
-			vim.api.nvim_set_keymap(mode, opts.default_keybindings.binding, "Rg()", {
+			api.nvim_set_keymap(mode, opts.default_keybindings.binding, "Rg()", {
 				expr = true,
 				silent = true,
 				noremap = true,
