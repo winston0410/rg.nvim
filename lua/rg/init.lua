@@ -5,6 +5,7 @@ local opts = {
 	default_keybindings = {
 		enable = true,
 		modes = { "v" },
+		binding = "<Leader>s",
 	},
 	on_complete = function()
 		api.nvim_command("cwindow")
@@ -61,7 +62,7 @@ local function setup(user_opts)
 	opts = vim.tbl_deep_extend("force", opts, user_opts or {})
 	if opts.default_keybindings and opts.default_keybindings.enable then
 		for _, mode in ipairs(opts.default_keybindings.modes) do
-			vim.api.nvim_set_keymap(mode, opts.keybindings[mode], "Rg()", {
+			vim.api.nvim_set_keymap(mode, opts.default_keybindings.binding, "Rg()", {
 				expr = true,
 				silent = true,
 				noremap = true,
