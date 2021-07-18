@@ -106,9 +106,12 @@ local function setup(user_opts)
 			})
 		end
 	end
+
+	vim.api.nvim_exec("command! -nargs=+ -complete=dir -bar Rg lua require'rg'.trigger_rg(<q-args>)", true)
 end
 
 return {
 	search = search,
+	trigger_rg = trigger_rg,
 	setup = setup,
 }
